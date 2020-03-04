@@ -47,7 +47,6 @@ func newApp() *iris.Application {
 		context.View("index.html")
 	})
 
-
 	return app
 }
 
