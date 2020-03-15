@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"CmsProject/config"
 	"CmsProject/model"
 	_ "github.com/go-sql-driver/mysql" //不能忘记导入
 	"github.com/go-xorm/xorm"
@@ -9,12 +10,20 @@ import (
 /**
  * 实例化数据库引擎方法：mysql的数据引擎
  */
-func NewMysqlEngine()*xorm.Engine{
+func NewMysqlEngine() *xorm.Engine {
+	initConfig := config.InitConfig()
 
+	if initConfig == nil {
+		return nil
+	}
+
+	database := initConfig.DataBase
+
+	dataSourceName := database.User + ":" + database.Pwd + "@tcp(" + database.Host + ")/" + database.Database + "?charset=utf8"
 	//数据库引擎
-	engine,err:=xorm.NewEngine("mysql",
-		"root:wsh123321.@/cmsproject?charset=utf8")
-	if err!=nil{
+	engine, err := xorm.NewEngine(database.Drive, dataSourceName)
+
+	if err != nil {
 		panic(err.Error())
 	}
 	//根据实体创建表
@@ -29,9 +38,20 @@ func NewMysqlEngine()*xorm.Engine{
 	 * 自动警告字段的默认值，是否为空信息在模型和数据库之间不匹配的情况
 	 */
 	//Sync2是Sync的基础上优化的方法
-	err=engine.Sync2(new(model.Admin))
+	err = engine.Sync2(
+		new(model.Permission),
+		new(model.City),
+		new(model.Admin),
+		new(model.User),
+		new(model.UserOrder),
+		new(model.Address),
+		new(model.Shop),
+		new(model.OrderStatus),
+		new(model.FoodCategory),
+		new(model.Food),
+	)
 
-	if err!=nil{
+	if err != nil {
 		panic(err.Error())
 	}
 

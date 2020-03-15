@@ -13,5 +13,21 @@ type Admin struct {
 	Pwd        string    `xorm:"varchar(255)" json:"pwd"`      //管理员密码
 	CityName   string    `xorm:"varchar(12)" json:"city_name"` //管理员所在城市名称
 	CityId     int64     `xorm:"index" json:"city_id"`
-	//City       *City     `xorm:"- <- ->"` //所对应的城市结构体（基础表结构体）
+	City       *City     `xorm:"- <- ->"` //所对应的城市结构体（基础表结构体）
+}
+
+/**
+ * 从Admin数据库实体转换为前端请求的resp的json格式
+ */
+func (ad *Admin) AdminToRespDesc() interface{} {
+	respDesc := map[string]interface{}{
+		"user_name":   ad.AdminName,
+		"id":          ad.AdminId,
+		"create_time": ad.CreateTime,
+		"status":      ad.Status,
+		"avatar":      ad.Avatar,
+		"city":        ad.CityName,
+		"admin":       "管理员",
+	}
+	return respDesc
 }
