@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/sessions"
+	"strconv"
 )
 
 /**
@@ -30,6 +31,23 @@ type AdminLogin struct {
 const (
 	ADMIN = "admin"
 )
+
+func (ac *AdminController) GetAll() mvc.Result {
+	limit, err := strconv.Atoi(ac.Ctx.FormValue("limit"))
+	offset, err := strconv.Atoi(ac.Ctx.FormValue("offset"))
+	if err != nil {
+		offset = 0
+		limit = 20
+	}
+	admin, err := ac.Service.GetAdminAll(limit, offset)
+	if err != nil {
+		panic(err.Error())
+		return nil
+	}
+	return mvc.Response{
+		Object: admin,
+	}
+}
 
 /**
  * 管理员退出功能

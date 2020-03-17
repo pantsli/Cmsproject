@@ -7,11 +7,14 @@ import (
 	"CmsProject/model"
 	"CmsProject/service"
 	"CmsProject/utils"
+	"encoding/json"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/sessions"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -111,6 +114,11 @@ func mvcHandle(app *iris.Application) {
 	category.Register(categoryService, sessManager.Start)
 	category.Handle(new(controller.CategoryController))
 
+	foodService := service.NewFoodService(engine)
+	food := mvc.New(app.Party("/shopping/v2/foods/"))
+	food.Register(foodService)
+	food.Handle(new(controller.FoodController))
+
 	//获取用户详细信息
 	app.Get("/v1/user/{user_name}", func(context context.Context) {
 		userName := context.Params().Get("user_name")
@@ -207,6 +215,79 @@ func mvcHandle(app *iris.Application) {
 		}
 		context.JSON(shop)
 	})
+
+	app.Post("/v1/addimg/{model}}", func(context context.Context) {
+		model := context.Params().Get("model")
+		file, info, err := context.FormFile("file")
+		if err != nil {
+			context.JSON(iris.Map{
+				"status":  utils.RECODE_FAIL,
+				"type":    utils.RESPMSG_ERROR_PICTUREADD,
+				"failure": utils.Recode2Text(utils.RESPMSG_ERROR_PICTUREADD),
+			})
+			return
+		}
+		defer file.Close()
+		fname := info.Filename
+		isExist, err := utils.PathExists("./uploads/" + model)
+		if !isExist {
+			err := os.Mkdir("./uploads/"+model, 0777)
+			if err != nil {
+				context.JSON(iris.Map{
+					"status":  utils.RECODE_FAIL,
+					"type":    utils.RESPMSG_ERROR_PICTUREADD,
+					"failure": utils.Recode2Text(utils.RESPMSG_ERROR_PICTUREADD),
+				})
+				return
+			}
+		}
+		out, err := os.OpenFile("./uploads/"+model+"/"+fname, os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			context.JSON(iris.Map{
+				"status":  utils.RECODE_FAIL,
+				"type":    utils.RESPMSG_ERROR_PICTUREADD,
+				"failure": utils.Recode2Text(utils.RESPMSG_ERROR_PICTUREADD),
+			})
+			return
+		}
+		_, err = io.Copy(out, file)
+		if err != nil {
+			context.JSON(iris.Map{
+				"status":  utils.RECODE_FAIL,
+				"type":    utils.RESPMSG_ERROR_PICTUREADD,
+				"failure": utils.Recode2Text(utils.RESPMSG_ERROR_PICTUREADD),
+			})
+			return
+		}
+		context.JSON(iris.Map{
+			"status":     utils.RECODE_OK,
+			"image_path": fname,
+		})
+	})
+
+	//地址Poi检索
+	app.Get("/v1/pois/", func(context context.Context) {
+		path := context.Request().URL.String()
+		rs, err := http.Get("https://elm.cangdu.org" + path)
+		if err != nil {
+			context.JSON(iris.Map{
+				"status":  utils.RECODE_FAIL,
+				"type":    utils.RESPMSG_ERROR_SEARCHADDRESS,
+				"message": utils.Recode2Text(utils.RESPMSG_ERROR_SEARCHADDRESS),
+			})
+			return
+		}
+		//请求成功
+		body, err := ioutil.ReadAll(rs.Body)
+		if err != nil {
+			panic(err.Error())
+			return
+		}
+		var searchList []*model.PoiSearch
+		json.Unmarshal(body, &searchList)
+		context.JSON(&searchList)
+	})
+
 }
 
 /**

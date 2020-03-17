@@ -23,6 +23,8 @@ type AdminService interface {
 
 	// 保存头像信息
 	SaveAvatarImg(adminID int64, fname string) bool
+
+	GetAdminAll(limit, offset int) ([]model.Admin, error)
 }
 
 /**
@@ -36,6 +38,12 @@ func NewAdminService(db *xorm.Engine) AdminService {
 	return &adminService{
 		engine: db,
 	}
+}
+
+func (as *adminService) GetAdminAll(limit, offset int) ([]model.Admin, error) {
+	var admin []model.Admin
+	err := as.engine.Limit(limit, offset).Find(&admin)
+	return admin, err
 }
 
 /**

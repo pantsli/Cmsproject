@@ -11,6 +11,10 @@ import (
 type CategoryService interface {
 	AddCategory(category *model.FoodCategory) bool
 	GetCategoryByShopId(shopId int64) ([]model.FoodCategory, error)
+	SaveFood(food model.Food) bool
+	DelFood(foodId int) bool
+	SaveShop(shop model.Shop) bool
+	DeleteShop(shopId int) bool
 }
 
 /**
@@ -25,6 +29,28 @@ type categoryService struct {
  */
 func NewCategoryService(db *xorm.Engine) CategoryService {
 	return &categoryService{engine: db}
+}
+
+func (cs *categoryService) DeleteShop(shopId int) bool {
+	shop := model.Shop{ShopId: shopId, Dele: 1}
+	_, err := cs.engine.Where("shop_id=?", shopId).Update(&shop)
+	return err == nil
+}
+
+func (cs *categoryService) SaveShop(shop model.Shop) bool {
+	_, err := cs.engine.Insert(&shop)
+	return err == nil
+}
+
+func (cs *categoryService) DelFood(foodId int) bool {
+	food := model.Food{Id: foodId, DelFlag: 1}
+	_, err := cs.engine.Where("id = ?", foodId).Update(&food)
+	return err == nil
+}
+
+func (cs *categoryService) SaveFood(food model.Food) bool {
+	_, err := cs.engine.Insert(&food)
+	return err == nil
 }
 
 /**
